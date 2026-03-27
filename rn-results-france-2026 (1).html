@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RN Vote Share — French Municipal Elections 2026</title>
+<meta property="og:title" content="RN Vote Share — French Municipales 2026">
+<meta property="og:description" content="Rassemblement National vote percentages across France's 50 largest cities in the March 2026 municipal elections.">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap');
+
+  :root {
+    --ink: #0f0f0f;
+    --paper: #f5f0e8;
+    --rule: #c8bfaa;
+    --rn-low: #d4e8d4;
+    --rn-mid: #f5c842;
+    --rn-high: #e8360a;
+    --rn-won: #1a0a00;
+    --accent: #1a3a7a;
+    --none: #e0dbd0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    padding: 0 0 60px 0;
+  }
+
+  /* Masthead */
+  .masthead {
+    border-bottom: 3px solid var(--ink);
+    padding: 18px 32px 14px;
+    display: flex;
+    align-items: baseline;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .masthead-flag {
+    font-size: 28px;
+    line-height: 1;
+  }
+  .masthead-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--accent);
+    font-weight: 400;
+  }
+  .masthead-date {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: #888;
+    margin-left: auto;
+  }
+
+  /* Hero */
+  .hero {
+    padding: 40px 32px 28px;
+    border-bottom: 1px solid var(--rule);
+    max-width: 900px;
+  }
+  .hero h1 {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(32px, 5vw, 52px);
+    line-height: 1.08;
+    font-weight: 400;
+    margin-bottom: 12px;
+  }
+  .hero h1 em {
+    font-style: italic;
+    color: var(--accent);
+  }
+  .hero p {
+    font-size: 15px;
+    color: #555;
+    line-height: 1.6;
+    max-width: 560px;
+    font-weight: 300;
+  }
+
+  /* Legend */
+  .legend {
+    padding: 16px 32px;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--rule);
+    align-items: center;
+  }
+  .legend-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #888;
+    font-weight: 500;
+    margin-right: 4px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #444;
+    font-family: 'DM Mono', monospace;
+  }
+  .swatch {
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    border: 1px solid rgba(0,0,0,0.12);
+  }
+
+  /* Table wrapper */
+  .table-wrap {
+    padding: 0 32px;
+    overflow-x: auto;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0;
+    font-size: 13.5px;
+  }
+
+  thead tr {
+    border-bottom: 2px solid var(--ink);
+  }
+
+  thead th {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 500;
+    color: #777;
+    padding: 14px 10px 10px;
+    text-align: left;
+    white-space: nowrap;
+  }
+  thead th:first-child { width: 36px; text-align: center; padding-left: 0; }
+  thead th.pct-head { text-align: right; }
+  thead th.bar-head { width: 180px; }
+
+  tbody tr {
+    border-bottom: 1px solid var(--rule);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: rgba(0,0,0,0.03); }
+
+  td {
+    padding: 9px 10px;
+    vertical-align: middle;
+  }
+  td:first-child {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    color: #aaa;
+    text-align: center;
+    padding-left: 0;
+    width: 36px;
+  }
+  .city-name {
+    font-weight: 500;
+    font-size: 13.5px;
+  }
+  .list-label {
+    font-size: 11px;
+    color: #888;
+    margin-top: 1px;
+    font-style: italic;
+    max-width: 240px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .pct-cell {
+    text-align: right;
+    font-family: 'DM Mono', monospace;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .pct-none {
+    color: #bbb;
+    font-size: 12px;
+    font-style: italic;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 300;
+  }
+
+  /* Bar cell */
+  .bar-cell { padding-right: 20px; }
+  .bar-track {
+    height: 8px;
+    background: #e8e2d8;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.4s ease;
+  }
+
+  /* Type badge */
+  .badge {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    padding: 2px 5px;
+    border-radius: 3px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .badge-lrn { background: #e8e8e8; color: #333; border: 1px solid #ccc; }
+  .badge-luxd { background: #fde8b0; color: #7a4a00; border: 1px solid #f5c842; }
+  .badge-none { background: transparent; color: #ccc; font-style: italic; font-family: 'DM Sans', sans-serif; font-size: 11px; letter-spacing: 0; }
+
+  /* Won indicator */
+  .won-indicator {
+    display: inline-block;
+    width: 7px; height: 7px;
+    background: var(--rn-high);
+    border-radius: 50%;
+    margin-left: 5px;
+    vertical-align: middle;
+  }
+
+  /* Row colouring by pct */
+  tr.tier-won td.city-cell .city-name { font-weight: 700; }
+  tr.tier-won td.pct-cell { color: var(--rn-high); }
+
+  /* Footer */
+  .footer {
+    padding: 24px 32px 0;
+    font-size: 11px;
+    color: #aaa;
+    line-height: 1.7;
+    max-width: 700px;
+  }
+  .footer strong { color: #666; }
+
+  /* Source tag */
+  .source-tag {
+    display: inline-block;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 3px 8px;
+    border-radius: 3px;
+    margin-right: 6px;
+  }
+
+  @media (max-width: 600px) {
+    .hero, .masthead, .legend, .table-wrap, .footer { padding-left: 16px; padding-right: 16px; }
+    .bar-cell, .bar-track { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <span class="masthead-flag">🇫🇷</span>
+  <span class="masthead-title">Municipales 2026 — Data Analysis</span>
+  <span class="masthead-date">15 &amp; 22 March 2026</span>
+</div>
+
+<div class="hero">
+  <h1>RN in France's<br><em>50 Largest Cities</em></h1>
+  <p>Rassemblement National (and far-right allied) vote shares across France's 50 most populous communes in the March 2026 municipal elections. Source: Ministère de l'Intérieur official results.</p>
+</div>
+
+<div class="legend">
+  <span class="legend-label">Key</span>
+  <div class="legend-item"><span class="swatch" style="background:#d4e8d4"></span> &lt;10%</div>
+  <div class="legend-item"><span class="swatch" style="background:#f5c842"></span> 10–25%</div>
+  <div class="legend-item"><span class="swatch" style="background:#e8704a"></span> 25–40%</div>
+  <div class="legend-item"><span class="swatch" style="background:#e8360a"></span> 40%+</div>
+  <div class="legend-item" style="margin-left:12px"><span class="badge badge-lrn">LRN</span> Rassemblement National list</div>
+  <div class="legend-item"><span class="badge badge-luxd">LUXD</span> Far-right allied list</div>
+  <div class="legend-item"><span style="display:inline-block;width:7px;height:7px;background:#e8360a;border-radius:50%;margin-right:4px"></span> Won</div>
+</div>
+
+<div class="table-wrap">
+<table>
+  <thead>
+    <tr>
+      <th>#</th>
+      <th>City</th>
+      <th class="pct-head">% Votes</th>
+      <th class="bar-head">Share</th>
+      <th>List type</th>
+    </tr>
+  </thead>
+  <tbody id="tableBody"></tbody>
+</table>
+</div>
+
+<div style="padding: 40px 32px 0; border-top: 3px solid var(--ink); margin-top: 32px;">
+  <h2 style="font-family: 'DM Serif Display', serif; font-size: 28px; font-weight: 400; margin-bottom: 8px;">Analysis</h2>
+  <p style="font-size: 15px; color: #555; line-height: 1.7; max-width: 620px; font-weight: 300; margin-bottom: 32px;">The trend lines below reveal a moderate positive correlation: RN tends to perform better in smaller, lower-ranked cities. The very largest French cities — Paris, Lyon, Toulouse — are clearly more resistant to the far right. Perpignan, Toulon, Nice, and Marseille are the outliers pulling the trend upward.</p>
+
+  <!-- Chart 1 -->
+  <h3 style="font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 400; margin-bottom: 6px;">Population size vs. RN vote share</h3>
+  <p style="font-size: 13px; color: #888; margin-bottom: 16px;">Bubble size reflects city population. Hover for details. Cities with no RN list are excluded.</p>
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; font-size: 12px; color: #666;">
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#378ADD;border:1.5px solid #185FA5;display:inline-block"></span>LRN list</span>
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#EF9F27;border:1.5px solid #BA7517;display:inline-block"></span>LUXD (far-right allied)</span>
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#E24B4A;border:1.5px solid #A32D2D;display:inline-block"></span>Won</span>
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:24px;height:2px;background:#888;display:inline-block;border-top: 2px dashed #888;"></span>&nbsp;Trend line</span>
+  </div>
+  <div style="position: relative; width: 100%; height: 420px; margin-bottom: 40px;">
+    <canvas id="chart1"></canvas>
+  </div>
+
+  <!-- Chart 2 -->
+  <h3 style="font-family: 'DM Serif Display', serif; font-size: 18px; font-weight: 400; margin-bottom: 6px;">Population rank vs. RN vote share</h3>
+  <p style="font-size: 13px; color: #888; margin-bottom: 16px;">Rank 1 = largest city (Paris). A positive slope means RN does better in smaller cities.</p>
+  <div style="display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 12px; font-size: 12px; color: #666;">
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#378ADD;border:1.5px solid #185FA5;display:inline-block"></span>LRN list</span>
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#EF9F27;border:1.5px solid #BA7517;display:inline-block"></span>LUXD (far-right allied)</span>
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:10px;height:10px;border-radius:50%;background:#E24B4A;border:1.5px solid #A32D2D;display:inline-block"></span>Won</span>
+    <span style="display:flex;align-items:center;gap:5px;"><span style="width:24px;height:2px;background:#888;display:inline-block;border-top: 2px dashed #888;"></span>&nbsp;Trend line</span>
+  </div>
+  <div style="position: relative; width: 100%; height: 420px; margin-bottom: 16px;">
+    <canvas id="chart2"></canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const chartCities = [
+  {rank:1,name:"Paris",pop:2229621,rn:1.61,type:"LUXD",won:false},
+  {rank:2,name:"Marseille",pop:855393,rn:35.02,type:"LRN",won:false},
+  {rank:3,name:"Lyon",pop:500715,rn:7.07,type:"LUXD",won:false},
+  {rank:4,name:"Toulouse",pop:458298,rn:5.38,type:"LRN",won:false},
+  {rank:5,name:"Nice",pop:342295,rn:43.43,type:"LUXD",won:true},
+  {rank:6,name:"Nantes",pop:292718,rn:4.57,type:"LRN",won:false},
+  {rank:7,name:"Strasbourg",pop:275718,rn:7.00,type:"LRN",won:false},
+  {rank:8,name:"Montpellier",pop:272084,rn:7.26,type:"LRN",won:false},
+  {rank:9,name:"Bordeaux",pop:243626,rn:7.02,type:"LRN",won:false},
+  {rank:10,name:"Lille",pop:231491,rn:10.92,type:"LRN",won:false},
+  {rank:11,name:"Rennes",pop:211373,rn:6.67,type:"LRN",won:false},
+  {rank:12,name:"Reims",pop:182592,rn:21.03,type:"LRN",won:false},
+  {rank:13,name:"Le Havre",pop:172074,rn:15.30,type:"LUXD",won:false},
+  {rank:14,name:"Saint-Étienne",pop:172023,rn:18.97,type:"LRN",won:false},
+  {rank:15,name:"Toulon",pop:163760,rn:42.05,type:"LRN",won:false},
+  {rank:16,name:"Grenoble",pop:160215,rn:5.20,type:"LRN",won:false},
+  {rank:17,name:"Dijon",pop:153003,rn:12.70,type:"LUXD",won:false},
+  {rank:18,name:"Nîmes",pop:150564,rn:30.39,type:"LRN",won:false},
+  {rank:19,name:"Angers",pop:150125,rn:7.92,type:"LRN",won:false},
+  {rank:20,name:"Villeurbanne",pop:147192,rn:11.65,type:"LRN",won:false},
+  {rank:21,name:"Le Mans",pop:144244,rn:15.12,type:"LRN",won:false},
+  {rank:23,name:"Aix-en-Provence",pop:141545,rn:15.91,type:"LUXD",won:false},
+  {rank:24,name:"Clermont-Ferrand",pop:141463,rn:11.29,type:"LRN",won:false},
+  {rank:25,name:"Brest",pop:139386,rn:11.12,type:"LRN",won:false},
+  {rank:26,name:"Limoges",pop:135098,rn:12.54,type:"LRN",won:false},
+  {rank:27,name:"Tours",pop:134803,rn:11.69,type:"LRN",won:false},
+  {rank:28,name:"Amiens",pop:132699,rn:14.71,type:"LRN",won:false},
+  {rank:29,name:"Perpignan",pop:120959,rn:50.61,type:"LRN",won:true},
+  {rank:30,name:"Metz",pop:118634,rn:17.05,type:"LRN",won:false},
+  {rank:31,name:"Besançon",pop:116952,rn:8.00,type:"LRN",won:false},
+  {rank:32,name:"Boulogne-Bill.",pop:116794,rn:3.19,type:"LRN",won:false},
+  {rank:33,name:"Orléans",pop:114375,rn:7.23,type:"LUXD",won:false},
+  {rank:34,name:"Mulhouse",pop:112063,rn:13.63,type:"LRN",won:false},
+  {rank:35,name:"Rouen",pop:110755,rn:13.30,type:"LUXD",won:false},
+  {rank:37,name:"Caen",pop:107229,rn:7.39,type:"LRN",won:false},
+  {rank:39,name:"Roubaix",pop:95866,rn:11.87,type:"LRN",won:false},
+  {rank:40,name:"Tourcoing",pop:93974,rn:18.43,type:"LRN",won:false},
+  {rank:42,name:"Avignon",pop:90305,rn:25.52,type:"LRN",won:false},
+  {rank:46,name:"Poitiers",pop:87427,rn:10.53,type:"LRN",won:false},
+  {rank:52,name:"Versailles",pop:85272,rn:15.49,type:"LUXD",won:false},
+  {rank:53,name:"Colombes",pop:84577,rn:4.13,type:"LRN",won:false},
+];
+
+function linReg(pts) {
+  const n = pts.length;
+  let sx=0,sy=0,sxy=0,sx2=0;
+  for (const p of pts){sx+=p.x;sy+=p.y;sxy+=p.x*p.y;sx2+=p.x*p.x;}
+  const m=(n*sxy-sx*sy)/(n*sx2-sx*sx);
+  const b=(sy-m*sx)/n;
+  return {m,b};
+}
+
+function dotColors(d) {
+  if (d.won) return {bg:'#E24B4Abb', bd:'#A32D2D'};
+  if (d.type==='LUXD') return {bg:'#EF9F27bb', bd:'#BA7517'};
+  return {bg:'#378ADDbb', bd:'#185FA5'};
+}
+
+const gridColor = 'rgba(0,0,0,0.08)';
+const axisColor = '#999';
+
+// Chart 1: Population vs RN
+const pts1 = chartCities.map(c=>({x:c.pop,y:c.rn}));
+const r1 = linReg(pts1);
+const trend1 = [{x:80000,y:Math.max(0,r1.m*80000+r1.b)},{x:2300000,y:Math.max(0,r1.m*2300000+r1.b)}];
+const dots1 = chartCities.map(c=>({x:c.pop,y:c.rn,r:Math.max(5,Math.sqrt(c.pop/2000)),label:c.name,won:c.won,type:c.type}));
+
+new Chart(document.getElementById('chart1'),{
+  data:{datasets:[
+    {type:'bubble',data:dots1,backgroundColor:dots1.map(d=>dotColors(d).bg),borderColor:dots1.map(d=>dotColors(d).bd),borderWidth:1.5},
+    {type:'line',data:trend1,borderColor:'#888',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,tension:0}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20,right:20}},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+      if(ctx.datasetIndex===1)return null;
+      const d=ctx.raw;
+      return[d.label,`Population: ${d.x.toLocaleString()}`,`RN vote: ${d.y.toFixed(1)}%`];
+    }}}},
+    scales:{
+      x:{type:'linear',min:0,max:2400000,title:{display:true,text:'Population (2013 census)',font:{size:12},color:axisColor},
+        ticks:{color:axisColor,font:{size:11},callback:v=>v>=1000000?(v/1000000).toFixed(1)+'M':(v/1000).toFixed(0)+'k'},grid:{color:gridColor}},
+      y:{min:0,max:60,title:{display:true,text:'RN/far-right vote share (%)',font:{size:12},color:axisColor},
+        ticks:{color:axisColor,font:{size:11},callback:v=>v+'%'},grid:{color:gridColor}}
+    }}
+});
+
+// Chart 2: Rank vs RN
+const pts2 = chartCities.map(c=>({x:c.rank,y:c.rn}));
+const r2 = linReg(pts2);
+const trend2 = [{x:1,y:Math.max(0,r2.m*1+r2.b)},{x:55,y:Math.max(0,r2.m*55+r2.b)}];
+const dots2 = chartCities.map(c=>({x:c.rank,y:c.rn,r:7,label:c.name,won:c.won,type:c.type}));
+
+new Chart(document.getElementById('chart2'),{
+  data:{datasets:[
+    {type:'bubble',data:dots2,backgroundColor:dots2.map(d=>dotColors(d).bg),borderColor:dots2.map(d=>dotColors(d).bd),borderWidth:1.5},
+    {type:'line',data:trend2,borderColor:'#888',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false,tension:0}
+  ]},
+  options:{responsive:true,maintainAspectRatio:false,layout:{padding:{top:20,right:20}},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>{
+      if(ctx.datasetIndex===1)return null;
+      const d=ctx.raw;
+      return[d.label,`Rank: #${d.x}`,`RN vote: ${d.y.toFixed(1)}%`];
+    }}}},
+    scales:{
+      x:{type:'linear',min:0,max:56,title:{display:true,text:'Population rank (1 = largest city)',font:{size:12},color:axisColor},
+        ticks:{color:axisColor,font:{size:11},stepSize:5,callback:v=>v===0?'':'#'+v},grid:{color:gridColor}},
+      y:{min:0,max:60,title:{display:true,text:'RN/far-right vote share (%)',font:{size:12},color:axisColor},
+        ticks:{color:axisColor,font:{size:11},callback:v=>v+'%'},grid:{color:gridColor}}
+    }}
+});
+</script>
+
+<div class="footer">
+  <p><span class="source-tag">SOURCE</span> <strong>data.gouv.fr</strong> — Ministère de l'Intérieur, <em>Élections municipales 2026 — Résultats du premier tour</em> (updated 20 March 2026). Percentages shown are share of votes exprimés (cast valid ballots). <strong>LUXD</strong> (extrême droite) lists are far-right allied parties running in coordination with or sympathetic to RN. Paris's 1.61% LUXD figure represents a minor fringe list, not a mainstream RN presence. Cities showing "—" fielded no RN or far-right allied list.</p>
+</div>
+
+<script>
+const data = [
+  [1, "Paris", 1.61, "RP", "LUXD", false],
+  [2, "Marseille", 35.02, "MARSEILLE EN ORDRE", "LRN", false],
+  [3, "Lyon", 7.07, "Retrouver Lyon", "LUXD", false],
+  [4, "Toulouse", 5.38, "Le bon sens toulousain", "LRN", false],
+  [5, "Nice", 43.43, "LE MEILLEUR EST A VENIR (Ciotti)", "LUXD", true],
+  [6, "Nantes", 4.57, "Pour une Nantes Sûre", "LRN", false],
+  [7, "Strasbourg", 7.00, "SAUVONS STRASBOURG", "LRN", false],
+  [8, "Montpellier", 7.26, "LIBÉRER MONTPELLIER !", "LRN", false],
+  [9, "Bordeaux", 7.02, "RASSEMBLEMENT NATIONAL POUR BORDEAUX", "LRN", false],
+  [10, "Lille", 10.92, "UNE AUTRE LILLE", "LRN", false],
+  [11, "Rennes", 6.67, "RASSEMBLEMENT POUR RENNES", "LRN", false],
+  [12, "Reims", 21.03, "POUR REIMS UNE NOUVELLE ÈRE", "LRN", false],
+  [13, "Le Havre", 15.30, "LE HAVRE D'ABORD", "LUXD", false],
+  [14, "Saint-Étienne", 18.97, "RETROUVER SAINTÉ !", "LRN", false],
+  [15, "Toulon", 42.05, "UN AVENIR POUR TOULON", "LRN", false],
+  [16, "Grenoble", 5.20, "RASSEMBLEMENT NATIONAL", "LRN", false],
+  [17, "Dijon", 12.70, "LE RASSEMBLEMENT DIJONNAIS", "LUXD", false],
+  [18, "Nîmes", 30.39, "FIERS D'ÊTRE NÎMOIS !", "LRN", false],
+  [19, "Angers", 7.92, "Rassemblement pour Angers", "LRN", false],
+  [20, "Villeurbanne", 11.65, "RENDEZ-NOUS VILLEURBANNE", "LRN", false],
+  [21, "Le Mans", 15.12, "RLM", "LRN", false],
+  [22, "Aix-en-Provence", 15.91, "AGIR POUR AIX", "LUXD", false],
+  [23, "Clermont-Ferrand", 11.29, "REMETTRE CLERMONT EN ORDRE", "LRN", false],
+  [24, "Brest", 11.12, "La Force du Changement !", "LRN", false],
+  [25, "Limoges", 12.54, "LIMOGES EN GRAND", "LRN", false],
+  [26, "Tours", 11.69, "À NOTRE TOURS", "LRN", false],
+  [27, "Amiens", 14.71, "Amiens pour Vous", "LRN", false],
+  [28, "Perpignan", 50.61, "CONTINUONS AVEC LOUIS ALIOT", "LRN", true],
+  [29, "Metz", 17.05, "UN AVENIR A METZ", "LRN", false],
+  [30, "Besançon", 8.00, "CHANGEONS BESANÇON", "LRN", false],
+  [31, "Boulogne-Billancourt", 3.19, "Union des patriotes", "LRN", false],
+  [32, "Orléans", 7.23, "ORLEANS, NOUVEL ELAN !", "LUXD", false],
+  [33, "Mulhouse", 13.63, "RM", "LRN", false],
+  [34, "Rouen", 13.30, "Rouen Conquérante", "LUXD", false],
+  [35, "Caen", 7.39, "RASSEMBLONS CAEN", "LRN", false],
+  [36, "Argenteuil", null, null, null, false],
+  [37, "Montreuil", null, null, null, false],
+  [38, "Nancy", null, null, null, false],
+  [39, "Roubaix", 11.87, "REDRESSER ROUBAIX ENSEMBLE", "LRN", false],
+  [40, "Tourcoing", 18.43, "UNIS POUR TOURCOING", "LRN", false],
+  [41, "Nanterre", null, null, null, false],
+  [42, "Avignon", 25.52, "Avignon en avant !", "LRN", false],
+  [43, "Vitry-sur-Seine", null, null, null, false],
+  [44, "Créteil", null, null, null, false],
+  [45, "Dunkerque", null, null, null, false],
+  [46, "Poitiers", 10.53, "UN CIEL BLEU POUR POITIERS", "LRN", false],
+  [47, "Asnières-sur-Seine", null, null, null, false],
+  [48, "Courbevoie", null, null, null, false],
+  [49, "Versailles", 15.49, "Rassemblement Versailles", "LUXD", false],
+  [50, "Colombes", 4.13, "Colombes en ordre", "LRN", false],
+];
+
+function barColor(pct) {
+  if (pct === null) return '#e0dbd0';
+  if (pct >= 40) return '#e8360a';
+  if (pct >= 25) return '#e8704a';
+  if (pct >= 10) return '#f5c842';
+  return '#7fc87f';
+}
+
+function tierClass(pct, won) {
+  if (won) return 'tier-won';
+  return '';
+}
+
+const tbody = document.getElementById('tableBody');
+data.forEach(([rank, city, pct, label, type, won]) => {
+  const tr = document.createElement('tr');
+  if (won) tr.classList.add('tier-won');
+
+  const pctStr = pct !== null ? pct.toFixed(2) + '%' : null;
+  const barW = pct !== null ? Math.min(pct, 55) / 55 * 100 : 0;
+  const color = barColor(pct);
+
+  let badgeHtml = '';
+  if (type === 'LRN') badgeHtml = `<span class="badge badge-lrn">LRN</span>`;
+  else if (type === 'LUXD') badgeHtml = `<span class="badge badge-luxd">LUXD</span>`;
+  else badgeHtml = `<span class="badge badge-none">no list</span>`;
+
+  tr.innerHTML = `
+    <td>${rank}</td>
+    <td class="city-cell">
+      <div class="city-name">${city}${won ? '<span class="won-indicator" title="RN/allied won"></span>' : ''}</div>
+      ${label ? `<div class="list-label">${label}</div>` : ''}
+    </td>
+    <td class="pct-cell">${pctStr ? pctStr : '<span class="pct-none">—</span>'}</td>
+    <td class="bar-cell">
+      <div class="bar-track">
+        <div class="bar-fill" style="width:${barW}%;background:${color}"></div>
+      </div>
+    </td>
+    <td>${badgeHtml}</td>
+  `;
+  tbody.appendChild(tr);
+});
+</script>
+</body>
+</html>
